@@ -56,7 +56,7 @@ func New(opts Options) (*db, error) {
 	if err != nil {
 		return nil, err
 	}
-	fmt.Printf("%+v", manifest)
+
 	l0handler := newLevelHanlder()
 	for _, l0file := range manifest.L0Files {
 		t := newTable(absPath, l0file.Idx)
@@ -98,7 +98,7 @@ func (d *db) Close() {
 	d.loadBalancingCloser.SignalAndWait()
 	d.flushDiskCloser.SignalAndWait()
 	d.compactionCloser.SignalAndWait()
-	fmt.Println(d.manifest)
+	fmt.Printf("%+v", d.manifest)
 	err := d.manifest.save(d.absPath)
 	if err != nil {
 		logrus.Fatalf("manifest: unable to save the manifest %s", err.Error())
@@ -232,7 +232,6 @@ loop:
 	for {
 		select {
 		case <-closer.HasBeenClosed():
-			fmt.Printf("breaking compaction")
 			break loop
 		default:
 			// check for l0Tables
@@ -293,7 +292,7 @@ loop:
 						// if the the value is not in the range, we'll create a new file and append everything
 						// it it
 						var extraBuilder *mergeTableBuilder
-						// some crazy for has been written so try to refactor
+						// some crazy for loop has been written so try to refactor
 						for _, idx := range p.tableIDS {
 							t := newTable(d.absPath, idx)
 							t.SeekBegin()

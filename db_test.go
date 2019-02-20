@@ -14,7 +14,6 @@ package aran
 
 import (
 	"bytes"
-	"fmt"
 	"sync"
 	"testing"
 
@@ -51,7 +50,7 @@ func TestCloser(t *testing.T) {
 		for {
 			select {
 			case <-closer.HasBeenClosed():
-				fmt.Println("breaking")
+
 				break loop
 			}
 		}
@@ -93,7 +92,7 @@ func TestConcurrent(t *testing.T) {
 		t.Fatalf("db is expected to open but got error %s", err.Error())
 	}
 	go func() {
-		for i := 0; i < 234; i++ {
+		for i := 108; i < 234; i++ {
 			key := []byte("vanakam" + string(i))
 			value := []byte("nanbare" + string(i))
 			d.Set(key, value)
@@ -102,4 +101,56 @@ func TestConcurrent(t *testing.T) {
 	}()
 	wg.Wait()
 	d.Close()
+	d, err = New(opts)
+	wg.Add(1)
+	wg.Add(1)
+	wg.Add(1)
+	go func() {
+		for i := 0; i < 100; i++ {
+			key := []byte("vanakam" + string(i))
+			value := []byte("nanbare" + string(i))
+			inv, exist := d.Get(key)
+			if !exist {
+				t.Fatalf("value not found for %s", string(key))
+			}
+			if bytes.Compare(value, inv) != 0 {
+				t.Fatalf("expected value %s but got %s", string(value), string(inv))
+			}
+		}
+		wg.Done()
+	}()
+	go func() {
+		for i := 101; i < 200; i++ {
+			key := []byte("vanakam" + string(i))
+			value := []byte("nanbare" + string(i))
+			inv, exist := d.Get(key)
+			if !exist {
+				t.Fatalf("value not found for %s", string(key))
+			}
+			if bytes.Compare(value, inv) != 0 {
+				t.Fatalf("expected value %s but got %s", string(value), string(inv))
+			}
+		}
+		wg.Done()
+	}()
+	go func() {
+		for i := 101; i < 200; i++ {
+			key := []byte("vanakam" + string(i))
+			value := []byte("nanbare" + string(i))
+			inv, exist := d.Get(key)
+			if !exist {
+				t.Fatalf("value not found for %s", string(key))
+			}
+			if bytes.Compare(value, inv) != 0 {
+				t.Fatalf("expected value %s but got %s", string(value), string(inv))
+			}
+		}
+		wg.Done()
+	}()
+	wg.Wait()
+	d.Close()
+}
+
+func TestCompaction(t *testing.T) {
+
 }

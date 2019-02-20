@@ -61,6 +61,8 @@ func (m *mergeTableBuilder) append(fp *os.File, limit int64) {
 func (m *mergeTableBuilder) add(kl, vl, key, val []byte, hash uint32) {
 	offset := m.buf.Len()
 	m.offsetMap[hash] = uint32(offset)
+	m.setMax(hash)
+	m.setMin(hash)
 	n, err := m.buf.Write(kl)
 	if err != nil {
 		logrus.Fatalf("merge builder: unable to insert kl %s", err.Error())
@@ -115,7 +117,7 @@ func (m *mergeTableBuilder) setMax(max uint32) {
 		m.max = max
 		return
 	}
-	if m.max > max {
+	if m.max < max {
 		m.max = max
 	}
 }
