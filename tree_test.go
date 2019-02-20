@@ -63,9 +63,15 @@ func TestDeleteTable(t *testing.T) {
 	tr.insert(34, 1)
 	tr.insert(32, 5)
 	tr.insert(31, 4)
+	tr.insert(34, 20)
+	tr.insert(32, 24)
+	tr.insert(31, 10)
 	tr.deleteTable(1)
 	tr.deleteTable(5)
 	tr.deleteTable(4)
+	tr.deleteTable(20)
+	tr.deleteTable(24)
+	tr.deleteTable(10)
 	if tr.root != nil {
 		t.Fatalf("expected root to be nil but got %+v", tr.root)
 	}

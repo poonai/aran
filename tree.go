@@ -69,7 +69,7 @@ func (n *node) deleteTable(idx uint32) {
 			n = n.right
 			return
 		}
-		n = n.right
+		n = n.left
 		return
 	}
 	if n.right != nil {

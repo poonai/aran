@@ -104,12 +104,13 @@ func (m *manifest) addl0file(records, minRange, maxRange uint32, size int, idx u
 func (m *manifest) addl1file(records, minRange, maxRange uint32, size int, idx uint32) {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
-	m.L0Files = append(m.L0Files, tableManifest{
+	m.L1Files = append(m.L1Files, tableManifest{
 		Records:  records,
 		MinRange: minRange,
 		MaxRange: maxRange,
 		Size:     uint32(size),
 		Density:  float32(records) / float32(maxRange-minRange),
+		Idx:      idx,
 	})
 }
 
@@ -124,10 +125,10 @@ func (m *manifest) l1Len() int {
 	return len(m.L1Files)
 }
 
-func (m *manifest) sortL1() {
+func (m *manifest) sortL0() {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
-	sort.Sort(tableDesencing(m.L1Files))
+	sort.Sort(tableDesencing(m.L0Files))
 }
 
 func (m *manifest) deleteL0Table(idx uint32) {

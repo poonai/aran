@@ -33,12 +33,12 @@ func (m *manifest) findL1Policy(tm tableManifest) compactionPolicy {
 		policy:   NOTUNION,
 	}
 	for _, l1m := range m.L1Files {
-		if l1m.MinRange < tm.MinRange && l1m.MaxRange > tm.MaxRange {
+		if l1m.MinRange <= tm.MinRange && l1m.MaxRange >= tm.MaxRange {
 			cp.policy = UNION
 			cp.tableIDS = append(cp.tableIDS, l1m.Idx)
 			return cp
 		}
-		if l1m.MinRange <= tm.MinRange || l1m.MaxRange >= tm.MaxRange {
+		if l1m.MinRange <= tm.MinRange && l1m.MaxRange > tm.MinRange {
 			cp.policy = OVERLAPPING
 			cp.tableIDS = append(cp.tableIDS, l1m.Idx)
 		}

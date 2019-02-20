@@ -17,7 +17,6 @@ import (
 	"os"
 	"path/filepath"
 	"sync"
-	"time"
 
 	"github.com/reusee/mmh3"
 
@@ -57,6 +56,7 @@ func New(opts Options) (*db, error) {
 	if err != nil {
 		return nil, err
 	}
+	fmt.Printf("%+v", manifest)
 	l0handler := newLevelHanlder()
 	for _, l0file := range manifest.L0Files {
 		t := newTable(absPath, l0file.Idx)
@@ -96,8 +96,9 @@ func (d *db) Close() {
 
 	d.writeCloser.SignalAndWait()
 	d.loadBalancingCloser.SignalAndWait()
-	d.compactionCloser.SignalAndWait()
 	d.flushDiskCloser.SignalAndWait()
+	d.compactionCloser.SignalAndWait()
+	fmt.Println(d.manifest)
 	err := d.manifest.save(d.absPath)
 	if err != nil {
 		logrus.Fatalf("manifest: unable to save the manifest %s", err.Error())
@@ -171,8 +172,6 @@ loop:
 			break loop
 		case imtable := <-d.flushDisk:
 			d.flushMem(imtable)
-		default:
-			time.Sleep(time.Millisecond * 10)
 		}
 	}
 	close(d.flushDisk)
@@ -185,10 +184,10 @@ loop:
 func (d *db) flushMem(imtable *hashMap) {
 	nxtID := d.manifest.nextFileID()
 	imtable.toDisk(d.absPath, nxtID)
-	d.Lock()
 	d.manifest.addl0file(imtable.records, imtable.minRange, imtable.maxRange, imtable.occupiedSpace(), nxtID)
 	table := newTable(d.absPath, nxtID)
 	d.l0handler.addTable(table, nxtID)
+	d.Lock()
 	d.immtable = nil
 	d.Unlock()
 }
@@ -237,21 +236,19 @@ loop:
 			break loop
 		default:
 			// check for l0Tables
-			fmt.Println(d.manifest.l0Len())
 			if d.manifest.l0Len() >= d.opts.NoOfL0Files {
 				if d.manifest.l1Len() == 0 {
 					// sorting according to the denisty
-					d.manifest.sortL1()
+					d.manifest.sortL0()
 					// create two victim table
 					t1, t2 := newTable(d.absPath, d.manifest.L0Files[0].Idx), newTable(d.absPath, d.manifest.L0Files[1].Idx)
 					d.mergeTable(t1, t2)
-					fmt.Println("deleting")
-					//d.l0handler.deleteTable(t1.ID())
+					d.l0handler.deleteTable(t1.ID())
 					t1.close()
 					removeTable(d.absPath, t1.ID())
 					d.manifest.deleteL0Table(t1.ID())
 					logrus.Infof("comapction: l0 file has beed deleted %d", t1.ID())
-					//d.l0handler.deleteTable(t2.ID())
+					d.l0handler.deleteTable(t2.ID())
 					t2.close()
 					removeTable(d.absPath, t2.ID())
 					d.manifest.deleteL0Table(t2.ID())
@@ -261,7 +258,6 @@ loop:
 				// level one files already exist so find union set to push
 				// if overlapping range then append accordingly other wise just push down
 				l0fs := d.manifest.copyL0()
-				fmt.Println(l0fs)
 				for _, l0f := range l0fs {
 					p := d.manifest.findL1Policy(l0f)
 					if p.policy == NOTUNION {
@@ -282,10 +278,13 @@ loop:
 						t1.close()
 						d.l0handler.deleteTable(t1.ID())
 						d.manifest.deleteL0Table(t1.ID())
+						removeTable(d.absPath, t1.ID())
 						logrus.Infof("compaction: l0 file has been deleted %d", t1.ID())
 						t2.close()
 						d.l1handler.deleteTable(t2.ID())
 						d.manifest.deleteL1Table(t2.ID())
+						removeTable(d.absPath, t2.ID())
+						logrus.Infof("compaction: l1 file has been deleted %d", t2.ID())
 						continue
 					}
 

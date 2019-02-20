@@ -13,7 +13,6 @@
 package aran
 
 import (
-	"fmt"
 	"sync"
 
 	"github.com/reusee/mmh3"
@@ -40,12 +39,9 @@ func (l *levelHandler) addTable(t *table, idx uint32) {
 }
 
 func (l *levelHandler) deleteTable(idx uint32) {
-	fmt.Println(idx)
 	l.Lock()
 	defer l.Unlock()
-	fmt.Println(idx)
 	l.indexer.deleteTable(idx)
-	fmt.Println("herer")
 	for i, table := range l.tables {
 		if table.ID() == idx {
 			l.tables[i] = l.tables[len(l.tables)-1]
