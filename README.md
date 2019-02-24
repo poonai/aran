@@ -17,7 +17,7 @@ Efficient Key-Value Stores with Ranged Log-Structured Merge Trees](https://ieeex
 		panic("value not exist")
 	}
 	fmt.Println(string(val))
-	d.Close()
+	db.Close()
 ```
 ### Note 
 Don't forget to close the db, otherwise some data will be lost.
@@ -44,7 +44,7 @@ Raising an issue is also a kind of help, so feel free to raise an issue if you f
 I was bored so I wrote this on my weekend. And, `Go` is awesome. btw I like `Rust` too.
 
 # Acknowledgments
-- Thank you sci-hub for letting me to download the paper. Language and money should not be barrier for gaining the knowledge (My opinion)
+- Thank you sci-hub for letting me to download the paper. Language and money should not be a barrier for gaining the knowledge (My opinion)
 - Thank you badger for inspiration.
 - Thank you [
 Efficient Key-Value Stores with Ranged Log-Structured Merge Trees's](https://ieeexplore.ieee.org/document/8457859) author for writing beautiful piece of LSM.
@@ -70,7 +70,7 @@ I go with the name [schoolboy](https://twitter.com/hi_balaji) and I do `Go` and 
 		panic("தகவல் கிடைக்கவில்லை")
 	}
 	fmt.Println(string(val))
-	d.Close()
+	db.Close()
 ```
 ### குறிப்பு 
 
