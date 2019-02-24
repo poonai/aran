@@ -26,8 +26,6 @@ func testTable(key, value string, begin, end int, idx uint32) *table {
 		value := []byte(fmt.Sprintf("%s%d", value, begin))
 		mem.Set(key, value)
 	}
-	fmt.Println(mem.minRange)
-	fmt.Println(mem.maxRange)
 	mem.toDisk("./", idx)
 	return newTable("./", idx)
 }

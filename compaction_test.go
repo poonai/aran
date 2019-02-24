@@ -102,9 +102,10 @@ func TestNotUnion(t *testing.T) {
 	t2 := testTable("vanakam", "nanbare", 3000, 4000, 2)
 	db.l0handler.addTable(t1, 1)
 	db.l1handler.addTable(t2, 2)
+	t2.fileInfo.minRange = t1.fileInfo.maxRange + 1
+	t2.fileInfo.maxRange = t1.fileInfo.maxRange + t1.fileInfo.minRange
 	db.manifest.addl0file(uint32(t1.fileInfo.entries), t1.fileInfo.minRange, t1.fileInfo.maxRange, int(t1.size), 1)
 	db.manifest.addl1file(uint32(t2.fileInfo.entries), t2.fileInfo.minRange, t2.fileInfo.maxRange, int(t2.size), 2)
-	fmt.Printf("%d %d %d %d", t1.fileInfo.minRange, t1.fileInfo.maxRange, t2.fileInfo.minRange, t2.fileInfo.maxRange)
 	p := db.manifest.findL1Policy(db.manifest.L0Files[0])
 	if p.policy != NOTUNION {
 		t.Fatalf("expected NOTUNION %d but got %d", NOTUNION, p.policy)
@@ -125,6 +126,9 @@ func TestOverlapping(t *testing.T) {
 	db.absPath = "./"
 	t1 := testTable("vanakam", "nanbare", 1, 100, 1)
 	t2 := testTable("vanakam", "nanbare", 50, 10000, 2)
+
+	t2.fileInfo.minRange = t1.fileInfo.minRange + 100
+	t2.fileInfo.maxRange = t1.fileInfo.maxRange + t1.fileInfo.minRange
 	db.l0handler.addTable(t1, 1)
 	db.l1handler.addTable(t2, 2)
 	db.manifest.addl0file(uint32(t1.fileInfo.entries), t1.fileInfo.minRange, t1.fileInfo.maxRange, int(t1.size), 1)
@@ -138,7 +142,5 @@ func TestOverlapping(t *testing.T) {
 	if len(db.manifest.L0Files) != 0 {
 		t.Fatalf("expected 0 level0 files but got %d", len(db.manifest.L0Files))
 	}
-	if len(db.manifest.L1Files) != 2 {
-		t.Fatalf("expected 2 level1 files but got %d", len(db.manifest.L1Files))
-	}
+	removeTestTable(6)
 }
