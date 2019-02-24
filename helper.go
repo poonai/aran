@@ -44,4 +44,21 @@ func removeTable(abs string, idx uint32) {
 	if err != nil {
 		logrus.Errorf("unable to delete the %d table", idx)
 	}
+	logrus.Infof("compaction: remove %d table", idx)
+}
+
+// https://codereview.stackexchange.com/questions/60074/in-array-in-go
+func in_array(val uint32, array []uint32) (index int, exists bool) {
+	exists = false
+	index = -1
+
+	for i, v := range array {
+		if val == v {
+			index = i
+			exists = true
+			return
+		}
+	}
+
+	return
 }

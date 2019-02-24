@@ -22,9 +22,12 @@ import (
 	"sync"
 	"sync/atomic"
 
+	"hash/crc32"
+
 	"github.com/AndreasBriese/bbloom"
-	"github.com/reusee/mmh3"
 )
+
+var CastagnoliCrcTable = crc32.MakeTable(crc32.Castagnoli)
 
 type hashMap struct {
 	buf           []byte
@@ -52,7 +55,9 @@ func newHashMap(size int) *hashMap {
 
 func (h *hashMap) Set(key, value []byte) {
 	h.Lock()
-	hash := mmh3.Hash32(key)
+	c := crc32.New(CastagnoliCrcTable)
+	c.Write(key)
+	hash := c.Sum32()
 	oldOffSet := h.currentOffset
 	kl := len(key)
 	vl := len(value)
@@ -74,7 +79,9 @@ func (h *hashMap) Set(key, value []byte) {
 func (h *hashMap) Get(outkey []byte) ([]byte, bool) {
 	h.RLock()
 	defer h.RLock()
-	hash := mmh3.Hash32(outkey)
+	c := crc32.New(CastagnoliCrcTable)
+	c.Write(outkey)
+	hash := c.Sum32()
 	offset, ok := h.concurrentMap[hash]
 	if !ok {
 		return nil, ok

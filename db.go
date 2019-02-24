@@ -14,11 +14,10 @@ package aran
 
 import (
 	"fmt"
+	"hash/crc32"
 	"os"
 	"path/filepath"
 	"sync"
-
-	"github.com/reusee/mmh3"
 
 	"github.com/Sirupsen/logrus"
 	"github.com/dgraph-io/badger/y"
@@ -90,15 +89,13 @@ func New(opts Options) (*db, error) {
 
 func (d *db) Close() {
 
+	d.loadBalancingCloser.SignalAndWait()
+	d.compactionCloser.SignalAndWait()
+	d.writeCloser.SignalAndWait()
 	if d.mtable.Len() > 0 {
 		d.flushDisk <- d.mtable
 	}
-
-	d.writeCloser.SignalAndWait()
-	d.loadBalancingCloser.SignalAndWait()
 	d.flushDiskCloser.SignalAndWait()
-	d.compactionCloser.SignalAndWait()
-	fmt.Printf("%+v", d.manifest)
 	err := d.manifest.save(d.absPath)
 	if err != nil {
 		logrus.Fatalf("manifest: unable to save the manifest %s", err.Error())
@@ -115,50 +112,38 @@ func (d *db) Set(key, val []byte) {
 	r.wg.Wait()
 }
 func (d *db) accpetWrite(closer *y.Closer) {
-	reqs := []*request{}
+
 loop:
 	for {
 		select {
 		case req := <-d.writeChan:
-			if len(reqs) > 10 {
-				// do write
-				d.write(reqs)
-				reqs = []*request{}
-			}
-			reqs = append(reqs, req)
+
+			// do write
+			d.write(req)
 
 		case <-closer.HasBeenClosed():
 			break loop
-		default:
-			// do write
-
-			d.write(reqs)
-			reqs = []*request{}
 		}
-	}
-	if len(reqs) == 0 {
-		reqs = []*request{}
 	}
 	close(d.writeChan)
 	for req := range d.writeChan {
-		reqs = append(reqs, req)
+		d.write(req)
 	}
-	d.write(reqs)
 	closer.Done()
 }
 
-func (d *db) write(reqs []*request) {
-	for _, req := range reqs {
-		if !d.mtable.isEnoughSpace(len(req.key) + len(req.value)) {
-			d.Lock()
-			d.immtable = d.mtable
-			d.mtable = newHashMap(d.opts.memtablesize)
-			d.Unlock()
-			d.flushDisk <- d.immtable
-		}
-		d.mtable.Set(req.key, req.value)
-		req.wg.Done()
+func (d *db) write(req *request) {
+
+	if !d.mtable.isEnoughSpace(len(req.key) + len(req.value)) {
+		d.Lock()
+		d.immtable = d.mtable
+		d.mtable = newHashMap(d.opts.memtablesize)
+		d.Unlock()
+		d.flushDisk <- d.immtable
 	}
+	d.mtable.Set(req.key, req.value)
+	req.wg.Done()
+
 }
 
 func (d *db) listenForFlushing(closer *y.Closer) {
@@ -226,7 +211,29 @@ func (d *db) saveL1Table(buf []byte) {
 	logrus.Infof("comapction: new l1 file has beed added %d", FID)
 }
 
+func (d *db) L0Compaction() {
+	// sorting according to the denisty
+	d.manifest.sortL0()
+	// create two victim table
+	d.manifest.mutex.Lock()
+	t1, t2 := newTable(d.absPath, d.manifest.L0Files[0].Idx), newTable(d.absPath, d.manifest.L0Files[1].Idx)
+	d.manifest.mutex.Unlock()
+	d.mergeTable(t1, t2)
+	d.l0handler.deleteTable(t1.ID())
+	t1.close()
+	removeTable(d.absPath, t1.ID())
+	d.manifest.deleteL0Table(t1.ID())
+	logrus.Infof("comapction: l0 file has beed deleted %d", t1.ID())
+	d.l0handler.deleteTable(t2.ID())
+	t2.close()
+	removeTable(d.absPath, t2.ID())
+	d.manifest.deleteL0Table(t2.ID())
+	logrus.Infof("comapction: l0 file has beed deleted %d", t2.ID())
+}
+
 func (d *db) runCompaction(closer *y.Closer) {
+	// ticker := time.NewTicker(time.Second)
+	// defer ticker.Stop()
 
 loop:
 	for {
@@ -235,101 +242,28 @@ loop:
 			break loop
 		default:
 			// check for l0Tables
-			if d.manifest.l0Len() >= d.opts.NoOfL0Files {
+			len := d.manifest.l0Len()
+			if len >= d.opts.NoOfL0Files {
 				if d.manifest.l1Len() == 0 {
-					// sorting according to the denisty
-					d.manifest.sortL0()
-					// create two victim table
-					t1, t2 := newTable(d.absPath, d.manifest.L0Files[0].Idx), newTable(d.absPath, d.manifest.L0Files[1].Idx)
-					d.mergeTable(t1, t2)
-					d.l0handler.deleteTable(t1.ID())
-					t1.close()
-					removeTable(d.absPath, t1.ID())
-					d.manifest.deleteL0Table(t1.ID())
-					logrus.Infof("comapction: l0 file has beed deleted %d", t1.ID())
-					d.l0handler.deleteTable(t2.ID())
-					t2.close()
-					removeTable(d.absPath, t2.ID())
-					d.manifest.deleteL0Table(t2.ID())
-					logrus.Infof("comapction: l0 file has beed deleted %d", t2.ID())
+					d.L0Compaction()
 				}
-
 				// level one files already exist so find union set to push
 				// if overlapping range then append accordingly other wise just push down
 				l0fs := d.manifest.copyL0()
+				fmt.Printf("%+v \n", d.manifest)
 				for _, l0f := range l0fs {
 					p := d.manifest.findL1Policy(l0f)
 					if p.policy == NOTUNION {
-						// normal push down
-						newt := newTable(d.absPath, l0f.Idx)
-						d.l1handler.addTable(newt, l0f.Idx)
-						d.l0handler.deleteTable(l0f.Idx)
-						d.manifest.addl1file(uint32(newt.fileInfo.entries), newt.fileInfo.minRange, newt.fileInfo.maxRange, int(newt.size), l0f.Idx)
-						d.manifest.deleteL0Table(l0f.Idx)
-						logrus.Info("compaction: NOT UNION found so simply pushing the l0 file to l1")
+						d.handleNotUnion(p, l0f)
 						continue
 					}
-
 					if p.policy == UNION {
-						t1, t2 := newTable(d.absPath, l0f.Idx), newTable(d.absPath, p.tableIDS[0])
-						d.mergeTable(t1, t2)
-						logrus.Infof("compaction: UNION SET found so merged l0 %d with l1 %d, pushed to l1", t1.ID(), t2.ID())
-						t1.close()
-						d.l0handler.deleteTable(t1.ID())
-						d.manifest.deleteL0Table(t1.ID())
-						removeTable(d.absPath, t1.ID())
-						logrus.Infof("compaction: l0 file has been deleted %d", t1.ID())
-						t2.close()
-						d.l1handler.deleteTable(t2.ID())
-						d.manifest.deleteL1Table(t2.ID())
-						removeTable(d.absPath, t2.ID())
-						logrus.Infof("compaction: l1 file has been deleted %d", t2.ID())
+						d.handleUnion(p, l0f)
 						continue
 					}
 
 					if p.policy == OVERLAPPING {
-						builders := []*mergeTableBuilder{}
-						// if the the value is not in the range, we'll create a new file and append everything
-						// it it
-						var extraBuilder *mergeTableBuilder
-						// some crazy for loop has been written so try to refactor
-						for _, idx := range p.tableIDS {
-							t := newTable(d.absPath, idx)
-							t.SeekBegin()
-							builder := newTableMergeBuilder(int(t.size))
-							builder.append(t.fp, int64(t.fileInfo.metaOffset))
-							builder.mergeHashMap(t.offsetMap, 0)
-							builders = append(builders, builder)
-						}
-						toCompacT := newTable(d.absPath, l0f.Idx)
-						iter := toCompacT.iter()
-						for iter.has() {
-							kl, vl, key, val := iter.next()
-							hash := mmh3.Hash32(key)
-							for _, builder := range builders {
-								if hash >= builder.Min() && hash <= builder.Max() {
-									hash := mmh3.Hash32(key)
-									builder.add(kl, vl, key, val, hash)
-									continue
-								}
-								if extraBuilder == nil {
-									extraBuilder = newTableMergeBuilder(10000000)
-								}
-								hash := mmh3.Hash32(key)
-								extraBuilder.add(kl, vl, key, val, hash)
-							}
-						}
-						for _, builder := range builders {
-							d.saveL1Table(builder.finish())
-						}
-						if extraBuilder != nil {
-							d.saveL1Table(extraBuilder.finish())
-						}
-						for _, idx := range p.tableIDS {
-							d.l0handler.deleteTable(idx)
-							removeTable(d.absPath, idx)
-							d.manifest.deleteL0Table(idx)
-						}
+						d.handleOverlapping(p, l0f)
 					}
 				}
 			}
@@ -339,6 +273,8 @@ loop:
 }
 
 func (d *db) loadBalancing(closer *y.Closer) {
+	// ticker := time.NewTicker(time.Second)
+	// defer ticker.Stop()
 loop:
 	for {
 		select {
@@ -357,7 +293,9 @@ loop:
 					iter := l1t.iter()
 					for iter.has() {
 						kl, vl, key, val := iter.next()
-						hash := mmh3.Hash32(key)
+						c := crc32.New(CastagnoliCrcTable)
+						c.Write(key)
+						hash := c.Sum32()
 						if hash < median {
 							builders[0].add(kl, vl, key, val, hash)
 							continue
@@ -372,7 +310,6 @@ loop:
 					logrus.Infof("load balancing: l1 file %d is splitted into two l1 files properly")
 				}
 			}
-
 		}
 	}
 	closer.Done()

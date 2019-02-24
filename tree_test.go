@@ -58,6 +58,17 @@ func TestLowerRange(t *testing.T) {
 	}
 }
 
+func TestFindAllLargestRange(t *testing.T) {
+	tr := newTree()
+	tr.insert(45, 1)
+	tr.insert(45, 2)
+	tr.insert(45, 3)
+	res := tr.findAllLargestRange(46)
+	if len(res[0].idx) != 3 {
+		t.Fatalf("expected 3 but got %d", len(res[0].idx))
+	}
+}
+
 func TestDeleteTable(t *testing.T) {
 	tr := newTree()
 	tr.insert(34, 1)

@@ -13,9 +13,8 @@
 package aran
 
 import (
+	"hash/crc32"
 	"sync"
-
-	"github.com/reusee/mmh3"
 )
 
 type levelHandler struct {
@@ -54,16 +53,23 @@ func (l *levelHandler) deleteTable(idx uint32) {
 
 func (l *levelHandler) get(key []byte) ([]byte, bool) {
 	l.RLock()
-	defer l.RLock()
-	hash := mmh3.Hash32(key)
+	defer l.RUnlock()
+	c := crc32.New(CastagnoliCrcTable)
+	c.Write(key)
+	hash := c.Sum32()
 	nodes := l.indexer.findAllLargestRange(hash)
 
 	for _, node := range nodes {
-		t := l.getTable(node.idx)
-		val, exist := t.Get(key)
-		if exist {
-			return val, true
+		for _, id := range node.idx {
+			t := l.getTable(id)
+			if t != nil {
+				val, exist := t.Get(key)
+				if exist {
+					return val, true
+				}
+			}
 		}
+
 	}
 	return nil, false
 }

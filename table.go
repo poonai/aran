@@ -17,11 +17,10 @@ import (
 	"encoding/binary"
 	"encoding/gob"
 	"fmt"
+	"hash/crc32"
 	"os"
 	"sync"
 	"syscall"
-
-	"github.com/reusee/mmh3"
 
 	"github.com/AndreasBriese/bbloom"
 )
@@ -92,7 +91,9 @@ func (t *table) ID() uint32 {
 
 // only get is possible
 func (t *table) Get(key []byte) ([]byte, bool) {
-	hash := mmh3.Hash32(key)
+	c := crc32.New(CastagnoliCrcTable)
+	c.Write(key)
+	hash := c.Sum32()
 	if !t.filterHas(hash) {
 		return nil, false
 	}

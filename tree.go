@@ -19,24 +19,40 @@ type node struct {
 	left       *node
 	right      *node
 	lowerRange uint32
-	idx        uint32
+	idx        []uint32
 }
 
-func (n *node) insert(out *node) {
-	out.root = n
-	if n.lowerRange > out.lowerRange {
+func (n *node) insert(lowerRange, idx uint32) {
+
+	if n.lowerRange == lowerRange {
+		n.idx = append(n.idx, idx)
+		return
+	}
+	if n.lowerRange > lowerRange {
 		if n.left == nil {
-			n.left = out
+			n.left = &node{
+				left:       nil,
+				right:      nil,
+				root:       n,
+				idx:        []uint32{idx},
+				lowerRange: lowerRange,
+			}
 			return
 		}
-		n.left.insert(out)
+		n.left.insert(lowerRange, idx)
 		return
 	}
 	if n.right == nil {
-		n.right = out
+		n.right = &node{
+			left:       nil,
+			right:      nil,
+			root:       n,
+			idx:        []uint32{idx},
+			lowerRange: lowerRange,
+		}
 		return
 	}
-	n.right.insert(out)
+	n.right.insert(lowerRange, idx)
 }
 
 func (n *node) rootNode() *node {
@@ -64,7 +80,13 @@ type tree struct {
 }
 
 func (n *node) deleteTable(idx uint32) {
-	if n.idx == idx {
+	i, ok := in_array(idx, n.idx)
+	if ok {
+		n.idx[i] = n.idx[len(n.idx)-1]
+		n.idx = n.idx[:len(n.idx)-1]
+		if len(n.idx) != 0 {
+			return
+		}
 		if n.right != nil {
 			n = n.right
 			return
@@ -72,6 +94,7 @@ func (n *node) deleteTable(idx uint32) {
 		n = n.left
 		return
 	}
+
 	if n.right != nil {
 		n.right.deleteTable(idx)
 	}
@@ -85,22 +108,27 @@ func newTree() *tree {
 }
 
 func (t *tree) insert(lowerRange, idx uint32) {
-	n := &node{
-		lowerRange: lowerRange,
-		idx:        idx,
-		left:       nil,
-		right:      nil,
-		root:       t.root,
-	}
 	if t.root == nil {
-		t.root = n
+		t.root = &node{
+			lowerRange: lowerRange,
+			idx:        []uint32{idx},
+			left:       nil,
+			right:      nil,
+			root:       t.root,
+		}
 		return
 	}
-	t.root.insert(n)
+	t.root.insert(lowerRange, idx)
 }
 
 func (t *tree) deleteTable(idx uint32) {
-	if t.root.idx == idx {
+	i, ok := in_array(idx, t.root.idx)
+	if ok {
+		t.root.idx[i] = t.root.idx[len(t.root.idx)-1]
+		t.root.idx = t.root.idx[:len(t.root.idx)-1]
+		if len(t.root.idx) != 0 {
+			return
+		}
 		if t.root.right != nil {
 			t.root = t.root.right
 			return

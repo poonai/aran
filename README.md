@@ -66,7 +66,7 @@ I goes with the name [schoolboy](https://twitter.com/hi_balaji) and I do `Go` an
 		panic(err)
 	}
 	db.Set([]byte("வாழ்க"), []byte("மனிதாபிமானம்"))
-	val, exist := db.Get([]byte("மனிதாபிமானம்"))
+	val, exist := db.Get([]byte("வாழ்க"))
 	if !exist {
 		panic("தகவல் கிடைக்கவில்லை")
 	}

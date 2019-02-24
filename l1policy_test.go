@@ -36,4 +36,8 @@ func TestPolicy(t *testing.T) {
 	if p.policy != OVERLAPPING {
 		t.Fatalf("exptected OVERLAPPING %d but got %d", OVERLAPPING, p.policy)
 	}
+	p = m.findL1Policy(tableManifest{MaxRange: 250, MinRange: 150})
+	if p.policy != OVERLAPPING {
+		t.Fatalf("exptected OVERLAPPING %d but got %d", OVERLAPPING, p.policy)
+	}
 }

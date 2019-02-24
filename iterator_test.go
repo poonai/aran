@@ -17,7 +17,7 @@ import (
 )
 
 func TestIterator(t *testing.T) {
-	tb := testTable(1, 100, 1)
+	tb := testTable("vanakam", "nanbare", 1, 100, 1)
 	iter := tb.iter()
 	records := 0
 	for iter.has() {

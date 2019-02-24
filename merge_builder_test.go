@@ -19,21 +19,23 @@ import (
 	"testing"
 )
 
-func testTable(begin, end int, idx uint32) *table {
+func testTable(key, value string, begin, end int, idx uint32) *table {
 	mem := newHashMap(64 << 20)
 	for ; begin < end; begin++ {
-		key := []byte(fmt.Sprintf("vanakam%d", begin))
-		value := []byte(fmt.Sprintf("nanbare%d", begin))
+		key := []byte(fmt.Sprintf("%s%d", key, begin))
+		value := []byte(fmt.Sprintf("%s%d", value, begin))
 		mem.Set(key, value)
 	}
+	fmt.Println(mem.minRange)
+	fmt.Println(mem.maxRange)
 	mem.toDisk("./", idx)
 	return newTable("./", idx)
 }
 
-func testValueExist(tb *table, begin, end int, t *testing.T) {
+func testValueExist(key, value string, tb *table, begin, end int, t *testing.T) {
 	for ; begin < end; begin++ {
-		key := []byte(fmt.Sprintf("vanakam%d", begin))
-		value := []byte(fmt.Sprintf("nanbare%d", begin))
+		key := []byte(fmt.Sprintf("%s%d", key, begin))
+		value := []byte(fmt.Sprintf("%s%d", value, begin))
 		inv, exist := tb.Get(key)
 		if !exist {
 			t.Fatalf("%s value not found", string(value))
@@ -48,8 +50,8 @@ func removeTestTable(idx uint32) {
 	os.Remove(fmt.Sprintf("./%d.table", idx))
 }
 func TestBuilder(t *testing.T) {
-	t1 := testTable(1, 100, 1)
-	t2 := testTable(101, 200, 2)
+	t1 := testTable("hello", "value", 1, 100, 1)
+	t2 := testTable("hello", "schoolboy", 101, 200, 2)
 	builder := newTableMergeBuilder(int(t1.size + t2.size))
 	t1.SeekBegin()
 	t2.SeekBegin()
@@ -61,8 +63,8 @@ func TestBuilder(t *testing.T) {
 	fp, _ := os.Create("3.table")
 	fp.Write(buf)
 	t3 := newTable("./", 3)
-	testValueExist(t3, 1, 100, t)
-	testValueExist(t3, 101, 200, t)
+	testValueExist("hello", "value", t3, 1, 100, t)
+	testValueExist("hello", "schoolboy", t3, 101, 200, t)
 	removeTestTable(1)
 	removeTestTable(2)
 	removeTestTable(3)
