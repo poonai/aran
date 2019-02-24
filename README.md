@@ -8,6 +8,7 @@ Efficient Key-Value Stores with Ranged Log-Structured Merge Trees](https://ieeex
 ```go
  	opts := aran.DefaultOptions()
 	db, err := aran.New(opts)
+	defer db.Close()
 	if err != nil {
 		panic(err)
 	}
@@ -17,7 +18,6 @@ Efficient Key-Value Stores with Ranged Log-Structured Merge Trees](https://ieeex
 		panic("value not exist")
 	}
 	fmt.Println(string(val))
-	db.Close()
 ```
 ### Note 
 Don't forget to close the db, otherwise some data will be lost.
@@ -61,6 +61,7 @@ I go with the name [schoolboy](https://twitter.com/hi_balaji) and I do `Go` and 
 ```go
  	opts := aran.DefaultOptions()
 	db, err := aran.New(opts)
+	defer db.Close()
 	if err != nil {
 		panic(err)
 	}
@@ -70,7 +71,6 @@ I go with the name [schoolboy](https://twitter.com/hi_balaji) and I do `Go` and 
 		panic("தகவல் கிடைக்கவில்லை")
 	}
 	fmt.Println(string(val))
-	db.Close()
 ```
 ### குறிப்பு 
 
