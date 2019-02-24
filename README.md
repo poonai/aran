@@ -47,11 +47,10 @@ I was bored so I wrote this on my weekend. And, `Go` is awesome. btw I like `Rus
 - Thank you sci-hub for letting me to download the paper. Language and money should not be barrier for gaining the knowledge (My opinion)
 - Thank you badger for inspiration.
 - Thank you [
-Efficient Key-Value Stores with Ranged Log-Structured Merge Trees's](https://ieeexplore.ieee.org/document/8457859) author for writing beautiful piece of LSM. Sorry for using sci-hub :(
-- Thank you open source
+Efficient Key-Value Stores with Ranged Log-Structured Merge Trees's](https://ieeexplore.ieee.org/document/8457859) author for writing beautiful piece of LSM.
 # About Me
 
-I goes with the name [schoolboy](https://twitter.com/hi_balaji) and I do `Go` and little bit `Rust`. If you're looking for someone to collobrate with any open source project or to fill any junior dev position. You can DM me at [@hi_balaji](https://twitter.com/hi_balaji)
+I go with the name [schoolboy](https://twitter.com/hi_balaji) and I do `Go` and little bit `Rust`. If you're looking for someone to collaborate with an open source project or to fill any junior dev position. You can DM me at [@hi_balaji](https://twitter.com/hi_balaji)
 
 # அரண் 
 
@@ -86,7 +85,6 @@ close அழைக்கவும், இல்லையென்றால் �
 - ஆய்வு கட்டுரையை பதிவு இரக்கம் செய்ய உதவிய sci-hub'கு நன்றி 
 - எடுத்துக்காட்டாக இருந்த badger'கு நன்றி 
 - ஆய்வு கட்டுரை எழுதிய ஆசிரியர்க்கு நன்றி [Efficient Key-Value Stores with Ranged Log-Structured Merge Trees](https://ieeexplore.ieee.org/document/8457859)
-- ஒற்று மொத சமூகத்துக்கு நன்றி 
 
 # என்னை பற்றி 
 எனது பெயர் பாலாஜி ஜின்னா. நான் ஒரு பொறியியல் கல்லூரி மாணவன். உங்களுக்கு சந்தேகம் அல்லது ஒரு புதிய நட்பை உருவாக்க விரும்பினால் நீங்கள் எனது கிச்சாக [முகவரிக்கு](https://twitter.com/hi_balaji) செய்தி அனுப்பலாம் 
