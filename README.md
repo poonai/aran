@@ -8,10 +8,10 @@ Efficient Key-Value Stores with Ranged Log-Structured Merge Trees](https://ieeex
 ```go
  	opts := aran.DefaultOptions()
 	db, err := aran.New(opts)
-	defer db.Close()
 	if err != nil {
 		panic(err)
 	}
+	defer db.Close()
 	db.Set([]byte("hello"), []byte("schoolboy"))
 	val, exist := db.Get([]byte("hello"))
 	if !exist {
@@ -61,10 +61,10 @@ I go with the name [schoolboy](https://twitter.com/hi_balaji) and I do `Go` and 
 ```go
  	opts := aran.DefaultOptions()
 	db, err := aran.New(opts)
-	defer db.Close()
 	if err != nil {
 		panic(err)
 	}
+	defer db.Close()
 	db.Set([]byte("வாழ்க"), []byte("மனிதாபிமானம்"))
 	val, exist := db.Get([]byte("வாழ்க"))
 	if !exist {

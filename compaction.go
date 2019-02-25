@@ -97,5 +97,4 @@ func (d *db) handleOverlapping(p compactionPolicy, l0f tableManifest) {
 	d.l0handler.deleteTable(l0f.Idx)
 	removeTable(d.absPath, l0f.Idx)
 	d.manifest.deleteL0Table(l0f.Idx)
-
 }
