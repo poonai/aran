@@ -307,7 +307,7 @@ loop:
 					d.saveL1Table(builders[1].finish())
 					d.l1handler.deleteTable(l1f.Idx)
 					d.manifest.deleteL1Table(l1f.Idx)
-					logrus.Infof("load balancing: l1 file %d is splitted into two l1 files properly")
+					logrus.Infof("load balancing: l1 file %d is splitted into two l1 files properly",l1f.Idx)
 				}
 			}
 		}
