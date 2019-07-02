@@ -83,7 +83,7 @@ func New(opts Options) (*db, error) {
 	go db.runCompaction(db.compactionCloser)
 	go db.listenForFlushing(db.flushDiskCloser)
 	go db.loadBalancing(db.loadBalancingCloser)
-	go db.accpetWrite(db.writeCloser)
+	go db.acceptWrite(db.writeCloser)
 	return db, nil
 }
 
@@ -111,7 +111,7 @@ func (d *db) Set(key, val []byte) {
 	d.writeChan <- &r
 	r.wg.Wait()
 }
-func (d *db) accpetWrite(closer *y.Closer) {
+func (d *db) acceptWrite(closer *y.Closer) {
 
 loop:
 	for {
