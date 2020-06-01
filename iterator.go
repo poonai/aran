@@ -16,7 +16,7 @@ import (
 	"encoding/binary"
 	"os"
 
-	"github.com/Sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 )
 
 // simple forward iterator

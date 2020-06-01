@@ -21,7 +21,7 @@ import (
 	"os"
 
 	"github.com/AndreasBriese/bbloom"
-	"github.com/Sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 )
 
 // It is used for merging table into buffer. usually meant to merge two table
