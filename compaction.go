@@ -15,7 +15,7 @@ package aran
 import (
 	"hash/crc32"
 
-	"github.com/Sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 )
 
 func (d *db) handleNotUnion(p compactionPolicy, l0f tableManifest) {
