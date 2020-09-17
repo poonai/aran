@@ -41,7 +41,7 @@ func TestLowerRange(t *testing.T) {
 	}
 	n = tr.findLargestLowerRange(2)
 	if n != nil {
-		t.Fatalf("expected nil node but got %d", n)
+		t.Fatalf("expected nil node but got %v", n)
 	}
 
 	ns := tr.findAllLargestRange(72)

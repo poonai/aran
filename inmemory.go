@@ -78,7 +78,7 @@ func (h *hashMap) Set(key, value []byte) {
 
 func (h *hashMap) Get(outkey []byte) ([]byte, bool) {
 	h.RLock()
-	defer h.RLock()
+	defer h.RUnlock()
 	c := crc32.New(CastagnoliCrcTable)
 	c.Write(outkey)
 	hash := c.Sum32()
